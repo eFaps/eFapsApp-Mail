@@ -67,6 +67,14 @@ public abstract class AbstractSendMail_Base
         return Session.getInstance(props);
     }
 
+    /**
+     * Send the mail.
+     * @param _parameter    Parameter as passed by the eFasp API
+     * @param _server       Server to be used
+     * @param _email        the email to be send
+     * @throws EFapsException   on error
+     * @throws EmailException   on email error
+     */
     protected void send(final Parameter _parameter,
                         final String _server,
                         final Email _email)
@@ -77,12 +85,25 @@ public abstract class AbstractSendMail_Base
         _email.send();
     }
 
+    /**
+     * @param _parameter    Parameter as passed by the eFaps API
+     * @param _email        the email to be send
+     * @throws EFapsException   on error
+     * @throws EmailException   on email error
+     */
     protected void setFrom(final Parameter _parameter,
                            final Email _email)
+        throws EFapsException, EmailException
     {
         // as default: nothing
     }
 
+    /**
+     * @param _parameter    Parameter as passed by the eFasp API
+     * @param _email        the email to be send
+     * @throws EFapsException   on error
+     * @throws EmailException   on email error
+     */
     protected abstract void addTo(final Parameter _parameter,
                                   final Email _email)
         throws EFapsException, EmailException;
