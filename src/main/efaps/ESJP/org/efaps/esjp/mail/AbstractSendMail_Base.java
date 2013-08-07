@@ -31,6 +31,8 @@ import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.esjp.mail.utils.Mail;
 import org.efaps.esjp.mail.utils.MailSettings;
 import org.efaps.util.EFapsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -44,6 +46,11 @@ import org.efaps.util.EFapsException;
 public abstract class AbstractSendMail_Base
 {
     /**
+     * Logger for this class.
+     */
+    protected static final Logger LOG = LoggerFactory.getLogger(AbstractSendMail.class);
+
+    /**
      * @param _parameter parameter as passed by the eFaps API
      * @param _server server key
      * @return new Session
@@ -53,6 +60,7 @@ public abstract class AbstractSendMail_Base
                                  final String _server) throws EFapsException
     {
         final Properties props = Mail.getSysConfig().getAttributeValueAsProperties(MailSettings.SERVER + _server);
+        AbstractSendMail_Base.LOG.debug("Getting Session with Properties: {}", props);
         return  Session.getInstance(props);
     }
 }

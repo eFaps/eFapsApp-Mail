@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
+import org.apache.commons.mail.SimpleEmail;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Parameter.ParameterValues;
 import org.efaps.admin.event.Return;
@@ -41,8 +42,6 @@ import org.efaps.db.PrintQuery;
 import org.efaps.db.QueryBuilder;
 import org.efaps.esjp.ci.CIMail;
 import org.efaps.util.EFapsException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -57,18 +56,21 @@ public abstract class SendMail_Base
     extends AbstractSendMail
 {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(SendMail.class);
 
+    /**
+     * @param _parameter
+     * @return
+     * @throws EFapsException
+     */
     public Return sendObjectMail(final Parameter _parameter)
         throws EFapsException
     {
         final Instance instance = _parameter.getInstance();
         if (instance.isValid()) {
             final Map<?, ?> properties = (Map<?, ?>) _parameter.get(ParameterValues.PROPERTIES);
-            String templateKey = (String) properties.get("template");
-            templateKey = "demo";
+            final String templateKey = (String) properties.get("template");
             if (templateKey == null) {
-                SendMail_Base.LOG.error("No property 'template' defined for Sending Object Mail.");
+                AbstractSendMail_Base.LOG.error("No property 'template' defined for Sending Object Mail.");
             } else {
                 final QueryBuilder queryBldr = new QueryBuilder(CIMail.TemplateObject);
                 queryBldr.addWhereAttrEqValue(CIMail.TemplateObject.Name, templateKey);
@@ -86,16 +88,16 @@ public abstract class SendMail_Base
                 }
 
                 if (template == null || (template != null && template.isEmpty())) {
-                    SendMail_Base.LOG.error("No valid Template for template '{}' during Sending Object Mail found.",
+                    AbstractSendMail_Base.LOG.error("No valid Template for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else if (server == null || (server != null && server.isEmpty())) {
-                    SendMail_Base.LOG.error("No valid Server for template '{}' during Sending Object Mail found.",
+                    AbstractSendMail_Base.LOG.error("No valid Server for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else {
                     if (isHtml) {
                         sendHtml(_parameter, server, getObjectString(_parameter, instance, template));
                     } else {
-
+                        sendPlain(_parameter, server, getObjectString(_parameter, instance, template));
                     }
                 }
             }
@@ -103,14 +105,21 @@ public abstract class SendMail_Base
         return new Return();
     }
 
+    /**
+     * @param _parameter    Parameter as passed by the efasp API
+     * @param _instance     instance the print is based on
+     * @param _template     templat eto parse
+     * @return String
+     * @throws EFapsException on error
+     */
     protected String getObjectString(final Parameter _parameter,
                                      final Instance _instance,
-                                     final String _template)
+                                     final String _string)
         throws EFapsException
     {
-        String ret = "";
+        String ret = _string;
         try {
-            final ValueParser parser = new ValueParser(new StringReader(_template));
+            final ValueParser parser = new ValueParser(new StringReader(_string));
             final ValueList valList = parser.ExpressionString();
             if (valList.getExpressions().size() > 0) {
                 final PrintQuery print = new PrintQuery(_instance);
@@ -125,6 +134,12 @@ public abstract class SendMail_Base
     }
 
 
+    /**
+     * @param _parameter    Parameter as passed by the efasp API
+     * @param _server       Server to be used
+     * @param _htmlContent  content
+     * @throws EFapsException on error
+     */
     protected void sendHtml(final Parameter _parameter,
                             final String _server,
                             final String _htmlContent)
@@ -139,8 +154,31 @@ public abstract class SendMail_Base
             email.setMailSession(getSession(_parameter, _server));
             email.send();
         } catch (final EmailException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
+        }
+    }
+
+    /**
+     * @param _parameter    Parameter as passed by the efasp API
+     * @param _server       Server to be used
+     * @param _plainContent  content
+     * @throws EFapsException on error
+     */
+    protected void sendPlain(final Parameter _parameter,
+                            final String _server,
+                            final String _plainContent)
+        throws EFapsException
+    {
+        try {
+            final SimpleEmail email = new SimpleEmail();
+            email.addTo("jan.moxter@innobix.com", "Jan Moxter");
+            email.setFrom("jan.moxter@gmail.com", "Demo");
+            email.setSubject("Test email");
+            email.setMsg(_plainContent);
+            email.setMailSession(getSession(_parameter, _server));
+            email.send();
+        } catch (final EmailException e) {
+            AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
         }
     }
 }
