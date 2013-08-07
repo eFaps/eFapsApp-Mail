@@ -24,6 +24,7 @@ package org.efaps.esjp.mail;
 import java.io.StringReader;
 import java.util.Map;
 
+import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
@@ -76,28 +77,34 @@ public abstract class SendMail_Base
                 queryBldr.addWhereAttrEqValue(CIMail.TemplateObject.Name, templateKey);
                 final MultiPrintQuery print = queryBldr.getPrint();
                 print.addAttribute(CIMail.TemplateObject.IsHtml, CIMail.TemplateObject.Template,
-                                CIMail.TemplateObject.Server);
+                                CIMail.TemplateObject.Server,  CIMail.TemplateObject.Subject);
                 print.executeWithoutAccessCheck();
                 String template = null;
                 boolean isHtml = true;
                 String server = null;
+                String subject = null;
                 if (print.next()) {
                     template = print.<String>getAttribute(CIMail.TemplateObject.Template);
+                    subject = print.<String>getAttribute(CIMail.TemplateObject.Subject);
                     server = print.<String>getAttribute(CIMail.TemplateObject.Server);
                     isHtml  = print.<Boolean>getAttribute(CIMail.TemplateObject.IsHtml);
                 }
 
                 if (template == null || (template != null && template.isEmpty())) {
-                    AbstractSendMail_Base.LOG.error("No valid Template for template '{}' during Sending Object Mail found.",
+                    AbstractSendMail_Base.LOG.error(
+                                    "No valid Template for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else if (server == null || (server != null && server.isEmpty())) {
-                    AbstractSendMail_Base.LOG.error("No valid Server for template '{}' during Sending Object Mail found.",
+                    AbstractSendMail_Base.LOG.error(
+                                    "No valid Server for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else {
                     if (isHtml) {
-                        sendHtml(_parameter, server, getObjectString(_parameter, instance, template));
+                        sendHtml(_parameter, server, getObjectString(_parameter, instance, subject),
+                                        getObjectString(_parameter, instance, template));
                     } else {
-                        sendPlain(_parameter, server, getObjectString(_parameter, instance, template));
+                        sendPlain(_parameter, server, getObjectString(_parameter, instance, subject),
+                                        getObjectString(_parameter, instance, template));
                     }
                 }
             }
@@ -137,22 +144,23 @@ public abstract class SendMail_Base
     /**
      * @param _parameter    Parameter as passed by the efasp API
      * @param _server       Server to be used
+     * @param _subject      Subject for the mail
      * @param _htmlContent  content
      * @throws EFapsException on error
      */
     protected void sendHtml(final Parameter _parameter,
                             final String _server,
+                            final String _subject,
                             final String _htmlContent)
         throws EFapsException
     {
         try {
             final HtmlEmail email = new HtmlEmail();
-            email.addTo("jan.moxter@innobix.com", "Jan Moxter");
-            email.setFrom("jan.moxter@gmail.com", "Demo");
-            email.setSubject("Test email");
+            setFrom(_parameter, email);
+            addTo(_parameter, email);
+            email.setSubject(_subject);
             email.setHtmlMsg(_htmlContent);
-            email.setMailSession(getSession(_parameter, _server));
-            email.send();
+            send(_parameter, _server, email);
         } catch (final EmailException e) {
             AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
         }
@@ -161,24 +169,37 @@ public abstract class SendMail_Base
     /**
      * @param _parameter    Parameter as passed by the efasp API
      * @param _server       Server to be used
+     * @param _subject      Subject for the mail
      * @param _plainContent  content
      * @throws EFapsException on error
      */
     protected void sendPlain(final Parameter _parameter,
                             final String _server,
+                            final String _subject,
                             final String _plainContent)
         throws EFapsException
     {
         try {
             final SimpleEmail email = new SimpleEmail();
-            email.addTo("jan.moxter@innobix.com", "Jan Moxter");
-            email.setFrom("jan.moxter@gmail.com", "Demo");
-            email.setSubject("Test email");
+            setFrom(_parameter, email);
+            addTo(_parameter, email);
+            email.setSubject(_subject);
             email.setMsg(_plainContent);
-            email.setMailSession(getSession(_parameter, _server));
-            email.send();
+            send(_parameter, _server, email);
         } catch (final EmailException e) {
             AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void addTo(final Parameter _parameter,
+                         final Email _email)
+        throws EmailException
+    {
+        //TODO must bge implemented bassed on template
+    }
+
 }
