@@ -24,6 +24,8 @@ package org.efaps.esjp.mail;
 import java.io.StringReader;
 import java.util.Map;
 
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.HtmlEmail;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Parameter.ParameterValues;
 import org.efaps.admin.event.Return;
@@ -52,6 +54,7 @@ import org.slf4j.LoggerFactory;
 @EFapsUUID("90e9fd8d-2396-4719-b691-7404872dc6bb")
 @EFapsRevision("$Rev$")
 public abstract class SendMail_Base
+    extends AbstractSendMail
 {
 
     protected static final Logger LOG = LoggerFactory.getLogger(SendMail.class);
@@ -62,31 +65,43 @@ public abstract class SendMail_Base
         final Instance instance = _parameter.getInstance();
         if (instance.isValid()) {
             final Map<?, ?> properties = (Map<?, ?>) _parameter.get(ParameterValues.PROPERTIES);
-            final String templateKey = (String) properties.get("template");
+            String templateKey = (String) properties.get("template");
+            templateKey = "demo";
             if (templateKey == null) {
                 SendMail_Base.LOG.error("No property 'template' defined for Sending Object Mail.");
             } else {
                 final QueryBuilder queryBldr = new QueryBuilder(CIMail.TemplateObject);
                 queryBldr.addWhereAttrEqValue(CIMail.TemplateObject.Name, templateKey);
                 final MultiPrintQuery print = queryBldr.getPrint();
-                print.addAttribute(CIMail.TemplateObject.IsHtml, CIMail.TemplateObject.Template);
+                print.addAttribute(CIMail.TemplateObject.IsHtml, CIMail.TemplateObject.Template,
+                                CIMail.TemplateObject.Server);
                 print.executeWithoutAccessCheck();
                 String template = null;
+                boolean isHtml = true;
+                String server = null;
                 if (print.next()) {
                     template = print.<String>getAttribute(CIMail.TemplateObject.Template);
+                    server = print.<String>getAttribute(CIMail.TemplateObject.Server);
+                    isHtml  = print.<Boolean>getAttribute(CIMail.TemplateObject.IsHtml);
                 }
 
                 if (template == null || (template != null && template.isEmpty())) {
-                    SendMail_Base.LOG.error("No valid Template for template '' during Sending Object Mail found.",
+                    SendMail_Base.LOG.error("No valid Template for template '{}' during Sending Object Mail found.",
+                                    templateKey);
+                } else if (server == null || (server != null && server.isEmpty())) {
+                    SendMail_Base.LOG.error("No valid Server for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else {
+                    if (isHtml) {
+                        sendHtml(_parameter, server, getObjectString(_parameter, instance, template));
+                    } else {
 
+                    }
                 }
             }
         }
         return new Return();
     }
-
 
     protected String getObjectString(final Parameter _parameter,
                                      final Instance _instance,
@@ -96,10 +111,9 @@ public abstract class SendMail_Base
         String ret = "";
         try {
             final ValueParser parser = new ValueParser(new StringReader(_template));
-            final ValueList list = parser.ExpressionString();
-            if (list.getExpressions().size() > 0) {
+            final ValueList valList = parser.ExpressionString();
+            if (valList.getExpressions().size() > 0) {
                 final PrintQuery print = new PrintQuery(_instance);
-                final ValueList valList = new ValueList();
                 valList.makeSelect(print);
                 print.executeWithoutAccessCheck();
                 ret = valList.makeString(_instance, print, TargetMode.VIEW);
@@ -108,5 +122,25 @@ public abstract class SendMail_Base
             throw new EFapsException("Catched Parser Exception.", e);
         }
         return ret;
+    }
+
+
+    protected void sendHtml(final Parameter _parameter,
+                            final String _server,
+                            final String _htmlContent)
+        throws EFapsException
+    {
+        try {
+            final HtmlEmail email = new HtmlEmail();
+            email.addTo("jan.moxter@innobix.com", "Jan Moxter");
+            email.setFrom("jan.moxter@gmail.com", "Demo");
+            email.setSubject("Test email");
+            email.setHtmlMsg(_htmlContent);
+            email.setMailSession(getSession(_parameter, _server));
+            email.send();
+        } catch (final EmailException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }
