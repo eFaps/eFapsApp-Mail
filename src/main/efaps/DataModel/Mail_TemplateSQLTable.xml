@@ -38,6 +38,7 @@
             <column name="NAME"            type="STRING_SHORT"    not-null="true" length="128" />
             <column name="SERVER"          type="STRING_SHORT"    not-null="true" length="128" />
             <column name="DESCR"           type="STRING_SHORT"                    length="256" />
+            <column name="SUBJECT"         type="STRING_SHORT"                    length="256" />
             <column name="TEMPLATE"        type="STRING_SHORT"                    length="2048" />
             <column name="HTML"            type="BOOLEAN"         not-null="true" />
             <column name="CREATOR"         type="INTEGER"         not-null="true"/>

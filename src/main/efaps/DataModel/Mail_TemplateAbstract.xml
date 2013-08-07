@@ -74,6 +74,12 @@
             <sqlcolumn>DESCR</sqlcolumn>
         </attribute>
         <attribute>
+            <name>Subject</name>
+            <type>String</type>
+            <sqltable>Mail_TemplateSQLTable</sqltable>
+            <sqlcolumn>SUBJECT</sqlcolumn>
+        </attribute>
+        <attribute>
             <name>Template</name>
             <type>String</type>
             <sqltable>Mail_TemplateSQLTable</sqltable>

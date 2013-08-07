@@ -50,6 +50,11 @@
             <property name="ModeEdit">EDITABLE</property>
             <property name="Attribute">Description</property>
         </field>
+         <field name="Subject">
+            <property name="ModeCreate">EDITABLE</property>
+            <property name="ModeEdit">EDITABLE</property>
+            <property name="Attribute">Subject</property>
+        </field>
         <field name="template">
             <property name="Columns">80</property>
             <property name="Rows">10</property>
