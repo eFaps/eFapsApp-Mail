@@ -48,4 +48,11 @@ public interface MailSettings
      */
     String SERVER = MailSettings.BASE + ".server.";
 
+
+    /**
+     * String.
+     * Default send from email.
+     */
+    String DEFAULTFROM = MailSettings.BASE + ".DefaultFrom";
+
 }

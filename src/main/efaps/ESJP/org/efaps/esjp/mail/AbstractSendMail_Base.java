@@ -96,6 +96,12 @@ public abstract class AbstractSendMail_Base
         throws EFapsException, EmailException
     {
         // as default: nothing
+        if (_email.getFromAddress() == null ) {
+            final String mail = Mail.getSysConfig().getAttributeValue(MailSettings.DEFAULTFROM);
+            if (mail !=  null) {
+                _email.setFrom(mail);
+            }
+        }
     }
 
     /**
