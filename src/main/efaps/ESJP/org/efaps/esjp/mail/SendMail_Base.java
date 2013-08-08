@@ -156,8 +156,6 @@ public abstract class SendMail_Base
     {
         try {
             final HtmlEmail email = new HtmlEmail();
-            setFrom(_parameter, email);
-            addTo(_parameter, email);
             email.setSubject(_subject);
             email.setHtmlMsg(_htmlContent);
             send(_parameter, _server, email);
@@ -181,8 +179,6 @@ public abstract class SendMail_Base
     {
         try {
             final SimpleEmail email = new SimpleEmail();
-            setFrom(_parameter, email);
-            addTo(_parameter, email);
             email.setSubject(_subject);
             email.setMsg(_plainContent);
             send(_parameter, _server, email);

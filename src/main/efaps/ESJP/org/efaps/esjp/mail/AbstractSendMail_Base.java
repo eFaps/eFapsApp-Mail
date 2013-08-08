@@ -81,6 +81,7 @@ public abstract class AbstractSendMail_Base
         throws EFapsException, EmailException
     {
         setFrom(_parameter, _email);
+        addTo(_parameter, _email);
         _email.setMailSession(getSession(_parameter, _server));
         _email.send();
     }
