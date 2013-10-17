@@ -18,7 +18,6 @@
  * Last Changed By: $Author$
  */
 
-
 package org.efaps.esjp.mail.utils;
 
 import java.util.UUID;
@@ -47,7 +46,7 @@ public class Mail
     }
 
     /**
-     * @return the SystemConfigruation for Sales
+     * @return the SystemConfigruation for Mail
      * @throws CacheReloadException on error
      */
     public static SystemConfiguration getSysConfig()
