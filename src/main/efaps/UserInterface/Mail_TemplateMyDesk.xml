@@ -35,7 +35,7 @@
             <menu>Mail_TemplateMyDesk_Menu</menu>
             <table>Mail_TemplateTable</table>
             <evaluate program="org.efaps.esjp.common.uitable.MultiPrint">
-                <property name="Types">Mail_TemplateAbstract</property>
+                <property name="Type">Mail_TemplateAbstract</property>
             </evaluate>
         </target>
         <!-- properties -->

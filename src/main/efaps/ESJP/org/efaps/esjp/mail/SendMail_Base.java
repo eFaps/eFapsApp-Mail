@@ -68,14 +68,14 @@ public abstract class SendMail_Base
     {
         final Instance instance = _parameter.getInstance();
         if (instance.isValid()) {
-            final Map<?, ?> properties = (Map<?, ?>) _parameter.get(ParameterValues.PROPERTIES);
-            final String templateKey = (String) properties.get("template");
+            final String templateKey = getTemplateKey(_parameter);
             if (templateKey == null) {
                 AbstractSendMail_Base.LOG.error("No property 'template' defined for Sending Object Mail.");
             } else {
                 final QueryBuilder queryBldr = new QueryBuilder(CIMail.TemplateObject);
                 queryBldr.addWhereAttrEqValue(CIMail.TemplateObject.Name, templateKey);
-                final MultiPrintQuery print = queryBldr.getPrint();
+
+                final MultiPrintQuery print = getPrint(_parameter, queryBldr);
                 print.addAttribute(CIMail.TemplateObject.IsHtml, CIMail.TemplateObject.Template,
                                 CIMail.TemplateObject.Server,  CIMail.TemplateObject.Subject);
                 print.executeWithoutAccessCheck();
@@ -110,6 +110,19 @@ public abstract class SendMail_Base
             }
         }
         return new Return();
+    }
+
+    protected String getTemplateKey(final Parameter _parameter)
+    {
+        final Map<?, ?> properties = (Map<?, ?>) _parameter.get(ParameterValues.PROPERTIES);
+        return (String) properties.get("template");
+    }
+
+    protected MultiPrintQuery getPrint(final Parameter _parameter,
+                                       final QueryBuilder _queryBldr)
+        throws EFapsException
+    {
+        return _queryBldr.getPrint();
     }
 
     /**
@@ -195,7 +208,7 @@ public abstract class SendMail_Base
                          final Email _email)
         throws EmailException
     {
-        //TODO must bge implemented bassed on template
+        //TODO must be implemented based on template
     }
 
 }

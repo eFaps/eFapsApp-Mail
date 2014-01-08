@@ -31,13 +31,19 @@
         <version-expression>(version==latest)</version-expression>
         <name>Mail-Configuration</name>
         <attribute>
-            <key>org.efaps.mail.server.GMAIL</key>
-            <value>mail.smtp.host=smtp.google.de
-mail.smtp.port=8888
-mail.smtp.user=Username
+            <key>org.efaps.mail.server.GMAILEXAMPLE</key>
+            <value>mail.smtp.user=USUARIO
+mail.smtp.password=SUPERSECRETO
+mail.smtp.host=smtp.gmail.com
+mail.smtp.port=465
+mail.debug=true
+mail.smtp.starttls.enabled=true
+mail.smtp.ssl.enable=true
+mail.smtp.auth=true
             </value>
             <description>DBProperties:
-Example of a generic Mail Server definition.
+Example of a generic Mail Server definition for GMAIL.
+All values can be found in  org.apache.commons.mail.EmailConstants
             </description>
         </attribute>
     </definition>
