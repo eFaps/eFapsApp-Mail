@@ -21,15 +21,19 @@
 
 package org.efaps.esjp.mail;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
-import java.util.Map;
+
+import javax.activation.DataSource;
+import javax.mail.util.ByteArrayDataSource;
 
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
 import org.efaps.admin.event.Parameter;
-import org.efaps.admin.event.Parameter.ParameterValues;
 import org.efaps.admin.event.Return;
 import org.efaps.admin.program.esjp.EFapsRevision;
 import org.efaps.admin.program.esjp.EFapsUUID;
@@ -37,10 +41,12 @@ import org.efaps.admin.ui.AbstractUserInterfaceObject.TargetMode;
 import org.efaps.beans.ValueList;
 import org.efaps.beans.valueparser.ParseException;
 import org.efaps.beans.valueparser.ValueParser;
+import org.efaps.db.Checkout;
 import org.efaps.db.Instance;
 import org.efaps.db.MultiPrintQuery;
 import org.efaps.db.PrintQuery;
 import org.efaps.db.QueryBuilder;
+import org.efaps.esjp.ci.CIFormMail;
 import org.efaps.esjp.ci.CIMail;
 import org.efaps.util.EFapsException;
 
@@ -57,7 +63,6 @@ public abstract class SendMail_Base
     extends AbstractSendMail
 {
 
-
     /**
      * @param _parameter
      * @return
@@ -70,7 +75,7 @@ public abstract class SendMail_Base
         if (instance.isValid()) {
             final String templateKey = getTemplateKey(_parameter);
             if (templateKey == null) {
-                AbstractSendMail_Base.LOG.error("No property 'template' defined for Sending Object Mail.");
+                AbstractSendMail_Base.LOG.error("No property 'Template' defined for Sending Object Mail.");
             } else {
                 final QueryBuilder queryBldr = new QueryBuilder(CIMail.TemplateObject);
                 queryBldr.addWhereAttrEqValue(CIMail.TemplateObject.Name, templateKey);
@@ -113,9 +118,9 @@ public abstract class SendMail_Base
     }
 
     protected String getTemplateKey(final Parameter _parameter)
+        throws EFapsException
     {
-        final Map<?, ?> properties = (Map<?, ?>) _parameter.get(ParameterValues.PROPERTIES);
-        return (String) properties.get("template");
+        return getProperty(_parameter, "Template");
     }
 
     protected MultiPrintQuery getPrint(final Parameter _parameter,
@@ -153,7 +158,6 @@ public abstract class SendMail_Base
         return ret;
     }
 
-
     /**
      * @param _parameter    Parameter as passed by the efasp API
      * @param _server       Server to be used
@@ -171,6 +175,7 @@ public abstract class SendMail_Base
             final HtmlEmail email = new HtmlEmail();
             email.setSubject(_subject);
             email.setHtmlMsg(_htmlContent);
+            attach(_parameter, email);
             send(_parameter, _server, email);
         } catch (final EmailException e) {
             AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
@@ -208,7 +213,36 @@ public abstract class SendMail_Base
                          final Email _email)
         throws EmailException
     {
-        //TODO must be implemented based on template
+        final String[] tos = _parameter.getParameterValues(CIFormMail.Mail_SendObjectMailForm.to.name);
+        if (tos != null) {
+            for (final String to : tos) {
+                _email.addTo(to);
+            }
+        }
+    }
+
+    /**
+     * @param _parameter Parameter as passed by the efasp API
+     * @param _email     mail to attach to
+     * @throws EFapsException, EmailException on error
+     */
+    protected void attach(final Parameter _parameter,
+                          final HtmlEmail _email)
+        throws EFapsException, EmailException
+    {
+        if ("true".equalsIgnoreCase(getProperty(_parameter, "Attachment"))) {
+            try {
+                final Checkout checkout = new Checkout(_parameter.getInstance());
+                final InputStream in = checkout.execute();
+                final InputStream is = new BufferedInputStream(in);
+                final DataSource source = new ByteArrayDataSource(is, "application/pdf");
+                final String fileName = checkout.getFileName();
+                _email.attach(source, fileName, "-");
+            } catch (final IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 
 }

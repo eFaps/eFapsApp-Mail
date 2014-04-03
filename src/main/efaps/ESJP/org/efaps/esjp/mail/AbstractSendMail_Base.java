@@ -29,6 +29,7 @@ import org.apache.commons.mail.EmailException;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.program.esjp.EFapsRevision;
 import org.efaps.admin.program.esjp.EFapsUUID;
+import org.efaps.esjp.common.AbstractCommon;
 import org.efaps.esjp.mail.utils.Mail;
 import org.efaps.esjp.mail.utils.MailSettings;
 import org.efaps.util.EFapsException;
@@ -39,12 +40,12 @@ import org.slf4j.LoggerFactory;
  * TODO comment!
  *
  * @author The eFaps Team
- * @version $Id: AbstractSendMail_Base.java 9995 2013-08-07 19:34:36Z
- *          jan@moxter.net $
+ * @version $Id$
  */
 @EFapsUUID("4a2ed8b6-3d80-4263-8b81-3fb850577e74")
 @EFapsRevision("$Rev$")
 public abstract class AbstractSendMail_Base
+    extends AbstractCommon
 {
 
     /**
