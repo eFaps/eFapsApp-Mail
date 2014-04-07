@@ -25,6 +25,14 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import javax.activation.DataSource;
 import javax.mail.util.ByteArrayDataSource;
@@ -33,21 +41,28 @@ import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
+import org.efaps.admin.datamodel.Type;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Return;
+import org.efaps.admin.event.Return.ReturnValues;
 import org.efaps.admin.program.esjp.EFapsRevision;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.admin.ui.AbstractUserInterfaceObject.TargetMode;
 import org.efaps.beans.ValueList;
 import org.efaps.beans.valueparser.ParseException;
 import org.efaps.beans.valueparser.ValueParser;
+import org.efaps.ci.CIAdminUser;
 import org.efaps.db.Checkout;
+import org.efaps.db.Context;
 import org.efaps.db.Instance;
 import org.efaps.db.MultiPrintQuery;
 import org.efaps.db.PrintQuery;
 import org.efaps.db.QueryBuilder;
+import org.efaps.db.SelectBuilder;
+import org.efaps.esjp.ci.CIERP;
 import org.efaps.esjp.ci.CIMail;
 import org.efaps.esjp.ci.CITableMail;
+import org.efaps.esjp.erp.CommonDocument;
 import org.efaps.util.EFapsException;
 
 
@@ -228,6 +243,30 @@ public abstract class SendMail_Base
         }
     }
 
+    @Override
+    protected void addCc(final Parameter _parameter,
+                         final Email _email)
+        throws EFapsException, EmailException
+    {
+        super.addCc(_parameter, _email);
+        final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
+        queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
+        final MultiPrintQuery multi = queryBldr.getPrint();
+        multi.addAttributeSet(CIAdminUser.Person.EmailSet.name);
+        multi.executeWithoutAccessCheck();
+        while (multi.next()) {
+            final Map<String, Object> mailSet = multi.getAttributeSet(CIAdminUser.Person.EmailSet.name);
+            if (mailSet != null && mailSet.containsKey("Email")) {
+                @SuppressWarnings("unchecked")
+                final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
+                for (final String email :  emails) {
+                    _email.addCc(email);
+                }
+
+            }
+        }
+    }
+
     /**
      * @param _parameter Parameter as passed by the efasp API
      * @param _email     mail to attach to
@@ -249,6 +288,86 @@ public abstract class SendMail_Base
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Return getJavaScriptUIValue(final Parameter _parameter)
+        throws EFapsException
+    {
+        final Return ret = new Return();
+        final MailDoc doc = new MailDoc();
+        final List<Map<String, String>> values = new ArrayList<Map<String, String>>();
+
+        if (_parameter.getInstance().getType().isKindOf(CIERP.DocumentAbstract.getType())) {
+            final PrintQuery print = new PrintQuery(_parameter.getInstance());
+            // Contacts_ClassPointOfContact
+            final Type pocType = Type.get(UUID.fromString("b4a4a330-3520-45e5-bba6-6ba14d093ff7"));
+            if (pocType != null) {
+                final SelectBuilder selName = SelectBuilder.get().linkto(CIERP.DocumentAbstract.Contact)
+                                .clazz(pocType.getUUID()).attributeset("PointOfContactSet").attribute("Name");
+                final SelectBuilder selEmail = SelectBuilder.get().linkto(CIERP.DocumentAbstract.Contact)
+                                .clazz(pocType.getUUID()).attributeset("PointOfContactSet").attribute("Email");
+                print.addSelect(selName, selEmail);
+                if (print.executeWithoutAccessCheck()) {
+                    final Object mailObj = print.getSelect(selEmail);
+                    final Object nameObj = print.getSelect(selName);
+                    if (mailObj != null) {
+                        if (mailObj instanceof String) {
+                            final Map<String, String> map = new HashMap<String, String>();
+                            values.add(map);
+                            map.put("toName", nameObj.toString());
+                            map.put("to", mailObj.toString());
+                        } else if (mailObj instanceof List) {
+                            final ArrayList<String> names = (ArrayList<String>) nameObj;
+                            final ArrayList<String> emails = (ArrayList<String>) mailObj;
+                            final Iterator<String> nameIter = names.iterator();
+                            final Iterator<String> emailIter = emails.iterator();
+                            while (emailIter.hasNext()) {
+                                final Map<String, String> map = new HashMap<String, String>();
+                                values.add(map);
+                                map.put("toName", nameIter.hasNext() ? nameIter.next() : "");
+                                map.put("to", emailIter.next());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        final StringBuilder js = new StringBuilder()
+                        .append("<script type=\"text/javascript\">\n");
+        js.append(doc.getTableRemoveScript(_parameter, "toTable"))
+                        .append(doc.getTableAddNewRowsScript(_parameter, "toTable", values,
+                                        null, false, false, null));
+        js.append("\n</script>\n");
+        ret.put(ReturnValues.SNIPLETT, js.toString());
+        return ret;
+    }
+
+
+    public static class MailDoc
+        extends CommonDocument
+    {
+
+        @Override
+        public StringBuilder getTableRemoveScript(final Parameter _parameter,
+                                                  final String _tableName)
+        {
+            return super.getTableRemoveScript(_parameter, _tableName, false, false);
+        }
+
+        @Override
+        protected StringBuilder getTableAddNewRowsScript(final Parameter _parameter,
+                                                         final String _tableName,
+                                                         final Collection<Map<String, String>> _values,
+                                                         final StringBuilder _onComplete,
+                                                         final boolean _onDomReady,
+                                                         final boolean _wrapInTags,
+                                                         final Set<String> _nonEscapeFields)
+        {
+            return super.getTableAddNewRowsScript(_parameter, _tableName, _values, _onComplete, _onDomReady,
+                            _wrapInTags, _nonEscapeFields);
         }
     }
 

@@ -83,6 +83,9 @@ public abstract class AbstractSendMail_Base
     {
         setFrom(_parameter, _email);
         addTo(_parameter, _email);
+        addBcc(_parameter, _email);
+        addCc(_parameter, _email);
+        addReplyTo(_parameter, _email);
         _email.setMailSession(getSession(_parameter, _server));
         _email.send();
     }
@@ -104,6 +107,45 @@ public abstract class AbstractSendMail_Base
                 _email.setFrom(mail);
             }
         }
+    }
+
+    /**
+     * @param _parameter    Parameter as passed by the eFaps API
+     * @param _email        the email to be send
+     * @throws EFapsException   on error
+     * @throws EmailException   on email error
+     */
+    protected void addCc(final Parameter _parameter,
+                         final Email _email)
+        throws EFapsException, EmailException
+    {
+        // as default: nothing
+    }
+
+    /**
+     * @param _parameter    Parameter as passed by the eFaps API
+     * @param _email        the email to be send
+     * @throws EFapsException   on error
+     * @throws EmailException   on email error
+     */
+    protected void addBcc(final Parameter _parameter,
+                          final Email _email)
+        throws EFapsException, EmailException
+    {
+        // as default: nothing
+    }
+
+    /**
+     * @param _parameter    Parameter as passed by the eFaps API
+     * @param _email        the email to be send
+     * @throws EFapsException   on error
+     * @throws EmailException   on email error
+     */
+    protected void addReplyTo(final Parameter _parameter,
+                              final Email _email)
+        throws EFapsException, EmailException
+    {
+        // as default: nothing
     }
 
     /**
