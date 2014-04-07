@@ -46,8 +46,8 @@ import org.efaps.db.Instance;
 import org.efaps.db.MultiPrintQuery;
 import org.efaps.db.PrintQuery;
 import org.efaps.db.QueryBuilder;
-import org.efaps.esjp.ci.CIFormMail;
 import org.efaps.esjp.ci.CIMail;
+import org.efaps.esjp.ci.CITableMail;
 import org.efaps.util.EFapsException;
 
 
@@ -213,10 +213,17 @@ public abstract class SendMail_Base
                          final Email _email)
         throws EmailException
     {
-        final String[] tos = _parameter.getParameterValues(CIFormMail.Mail_SendObjectMailForm.to.name);
+        final String[] tos = _parameter.getParameterValues(CITableMail.Mail_SendObjectMailToTable.to.name);
+        final String[] toNames = _parameter.getParameterValues(CITableMail.Mail_SendObjectMailToTable.toName.name);
         if (tos != null) {
-            for (final String to : tos) {
-                _email.addTo(to);
+            for (int i = 0; i< tos.length; i++) {
+                final String to = tos[i];
+                final String toName = toNames[i];
+                if (toName != null && toName.isEmpty()) {
+                    _email.addTo(to, toName);
+                } else {
+                    _email.addTo(to);
+                }
             }
         }
     }

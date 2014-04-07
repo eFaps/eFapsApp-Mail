@@ -29,11 +29,18 @@
     <definition>
         <version-expression>(version==latest)</version-expression>
         <name>Mail_SendObjectMailForm</name>
-        <field name="to">
+        <field name="toHeader" character="Heading">
+            <property name="ModeCreate">READONLY</property>
+            <property name="ModeEdit">READONLY</property>
+            <property name="Label">Mail_SendObjectMailForm.toHeader.Heading</property>
+        </field>
+        <field name="toTable" character="Target">
             <property name="ModeCreate">EDITABLE</property>
             <property name="ModeEdit">EDITABLE</property>
-            <property name="ClassNameUI">org.efaps.admin.datamodel.ui.StringUI</property>
-            <property name="Label">Mail_SendObjectMailForm.to.Label</property>
+            <table>Mail_SendObjectMailToTable</table>
+            <evaluate program="org.efaps.esjp.common.uitable.MultiPrint">
+                <property name="Type">Mail_TemplateObject</property>
+            </evaluate>
         </field>
     </definition>
 </ui-form>
