@@ -20,15 +20,20 @@
 
 package org.efaps.esjp.mail;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.mail.Session;
 
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.program.esjp.EFapsRevision;
 import org.efaps.admin.program.esjp.EFapsUUID;
+import org.efaps.admin.user.Person;
+import org.efaps.db.Context;
 import org.efaps.esjp.common.AbstractCommon;
 import org.efaps.esjp.mail.utils.Mail;
 import org.efaps.esjp.mail.utils.MailSettings;
@@ -51,7 +56,12 @@ public abstract class AbstractSendMail_Base
     /**
      * Logger for this class.
      */
-    protected static final Logger LOG = LoggerFactory.getLogger(AbstractSendMail.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractSendMail.class);
+
+    /**
+     * Map for parameters used with a substitutor.
+     */
+    private final Map<String,String> parameters = new HashMap<String,String>();
 
     /**
      * @param _parameter parameter as passed by the eFaps API
@@ -158,4 +168,42 @@ public abstract class AbstractSendMail_Base
                                   final Email _email)
         throws EFapsException, EmailException;
 
+    /**
+     * Getter method for the instance variable {@link #parameters}.
+     *
+     * @return value of instance variable {@link #parameters}
+     * @throws EFapsException   on error
+     */
+    public Map<String, String> getParameters()
+        throws EFapsException
+    {
+        if (this.parameters.isEmpty()) {
+            final Person person = Context.getThreadContext().getPerson();
+            this.parameters.put("user.firstname",  person.getFirstName());
+            this.parameters.put("user.lastname",  person.getLastName());
+            this.parameters.put("user.name",   person.getName());
+        }
+        return this.parameters;
+    }
+
+    /**
+     * Example:<br>
+     *<br>
+     * getParameters().put("animal", "quick brown fox");<br>
+     * getParameters().put("target", "lazy dog");<br>
+     * String templateString = "The ${animal} jumped over the ${target}.";<br>
+     *<br>
+     * yielding:<br>
+     * The quick brown fox jumped over the lazy dog.<br>
+     *
+     * @param _template Template to be substituted
+     * @return new String
+     * @throws EFapsException   on error
+     */
+    protected String substitute(final String _template)
+        throws EFapsException
+    {
+        final StrSubstitutor sub = new StrSubstitutor(getParameters());
+        return sub.replace(_template);
+    }
 }

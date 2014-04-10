@@ -51,6 +51,7 @@
             <property name="Attribute">Description</property>
         </field>
          <field name="Subject">
+            <property name="Columns">200</property>
             <property name="ModeCreate">EDITABLE</property>
             <property name="ModeEdit">EDITABLE</property>
             <property name="Attribute">Subject</property>
@@ -62,7 +63,6 @@
             <property name="ModeEdit">EDITABLE</property>
             <property name="Attribute">Template</property>
         </field>
-        
         <field character="Group" name="createGroup">
             <property name="GroupCount">2</property>
         </field>

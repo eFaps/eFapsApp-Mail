@@ -64,6 +64,8 @@ import org.efaps.esjp.ci.CIMail;
 import org.efaps.esjp.ci.CITableMail;
 import org.efaps.esjp.erp.CommonDocument;
 import org.efaps.util.EFapsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -77,6 +79,10 @@ import org.efaps.util.EFapsException;
 public abstract class SendMail_Base
     extends AbstractSendMail
 {
+    /**
+     * Logger for this class.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractSendMail.class);
 
     /**
      * @param _parameter
@@ -90,7 +96,7 @@ public abstract class SendMail_Base
         if (instance.isValid()) {
             final String templateKey = getTemplateKey(_parameter);
             if (templateKey == null) {
-                AbstractSendMail_Base.LOG.error("No property 'Template' defined for Sending Object Mail.");
+                SendMail_Base.LOG.error("No property 'Template' defined for Sending Object Mail.");
             } else {
                 final QueryBuilder queryBldr = new QueryBuilder(CIMail.TemplateObject);
                 queryBldr.addWhereAttrEqValue(CIMail.TemplateObject.Name, templateKey);
@@ -111,11 +117,11 @@ public abstract class SendMail_Base
                 }
 
                 if (template == null || (template != null && template.isEmpty())) {
-                    AbstractSendMail_Base.LOG.error(
+                    SendMail_Base.LOG.error(
                                     "No valid Template for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else if (server == null || (server != null && server.isEmpty())) {
-                    AbstractSendMail_Base.LOG.error(
+                    SendMail_Base.LOG.error(
                                     "No valid Server for template '{}' during Sending Object Mail found.",
                                     templateKey);
                 } else {
@@ -157,9 +163,9 @@ public abstract class SendMail_Base
                                      final String _string)
         throws EFapsException
     {
-        String ret = _string;
+        String ret = substitute(_string);
         try {
-            final ValueParser parser = new ValueParser(new StringReader(_string));
+            final ValueParser parser = new ValueParser(new StringReader(ret));
             final ValueList valList = parser.ExpressionString();
             if (valList.getExpressions().size() > 0) {
                 final PrintQuery print = new PrintQuery(_instance);
@@ -193,7 +199,7 @@ public abstract class SendMail_Base
             attach(_parameter, email);
             send(_parameter, _server, email);
         } catch (final EmailException e) {
-            AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
+            SendMail_Base.LOG.error("Could not send Mail.", e);
         }
     }
 
@@ -216,7 +222,7 @@ public abstract class SendMail_Base
             email.setMsg(_plainContent);
             send(_parameter, _server, email);
         } catch (final EmailException e) {
-            AbstractSendMail_Base.LOG.error("Could not send Mail.", e);
+            SendMail_Base.LOG.error("Could not send Mail.", e);
         }
     }
 
