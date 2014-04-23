@@ -303,7 +303,7 @@ public abstract class SendMail_Base
     {
         final Return ret = new Return();
         final MailDoc doc = new MailDoc();
-        final List<Map<String, String>> values = new ArrayList<Map<String, String>>();
+        final List<Map<String, Object>> values = new ArrayList<Map<String, Object>>();
 
         if (_parameter.getInstance().getType().isKindOf(CIERP.DocumentAbstract.getType())) {
             final PrintQuery print = new PrintQuery(_parameter.getInstance());
@@ -320,7 +320,7 @@ public abstract class SendMail_Base
                     final Object nameObj = print.getSelect(selName);
                     if (mailObj != null) {
                         if (mailObj instanceof String) {
-                            final Map<String, String> map = new HashMap<String, String>();
+                            final Map<String, Object> map = new HashMap<String, Object>();
                             values.add(map);
                             map.put("toName", nameObj.toString());
                             map.put("to", mailObj.toString());
@@ -330,7 +330,7 @@ public abstract class SendMail_Base
                             final Iterator<String> nameIter = names.iterator();
                             final Iterator<String> emailIter = emails.iterator();
                             while (emailIter.hasNext()) {
-                                final Map<String, String> map = new HashMap<String, String>();
+                                final Map<String, Object> map = new HashMap<String, Object>();
                                 values.add(map);
                                 map.put("toName", nameIter.hasNext() ? nameIter.next() : "");
                                 map.put("to", emailIter.next());
@@ -366,7 +366,7 @@ public abstract class SendMail_Base
         @Override
         protected StringBuilder getTableAddNewRowsScript(final Parameter _parameter,
                                                          final String _tableName,
-                                                         final Collection<Map<String, String>> _values,
+                                                         final Collection<Map<String, Object>> _values,
                                                          final StringBuilder _onComplete,
                                                          final boolean _onDomReady,
                                                          final boolean _wrapInTags,
