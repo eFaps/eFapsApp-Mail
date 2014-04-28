@@ -250,11 +250,11 @@ public abstract class SendMail_Base
     }
 
     @Override
-    protected void addCc(final Parameter _parameter,
-                         final Email _email)
+    protected void addReplyTo(final Parameter _parameter,
+                              final Email _email)
         throws EFapsException, EmailException
     {
-        super.addCc(_parameter, _email);
+        super.addReplyTo(_parameter, _email);
         final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
         queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
         final MultiPrintQuery multi = queryBldr.getPrint();
@@ -266,9 +266,8 @@ public abstract class SendMail_Base
                 @SuppressWarnings("unchecked")
                 final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
                 for (final String email :  emails) {
-                    _email.addCc(email);
+                    _email.addReplyTo(email);
                 }
-
             }
         }
     }
