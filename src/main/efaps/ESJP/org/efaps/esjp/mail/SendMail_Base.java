@@ -250,6 +250,29 @@ public abstract class SendMail_Base
     }
 
     @Override
+    protected void addCc(final Parameter _parameter,
+                         final Email _email)
+        throws EFapsException, EmailException
+    {
+        super.addCc(_parameter, _email);
+        final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
+        queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
+        final MultiPrintQuery multi = queryBldr.getPrint();
+        multi.addAttributeSet(CIAdminUser.Person.EmailSet.name);
+        multi.executeWithoutAccessCheck();
+        while (multi.next()) {
+            final Map<String, Object> mailSet = multi.getAttributeSet(CIAdminUser.Person.EmailSet.name);
+            if (mailSet != null && mailSet.containsKey("Email")) {
+                @SuppressWarnings("unchecked")
+                final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
+                for (final String email :  emails) {
+                    _email.addCc(email);
+                }
+            }
+        }
+    }
+
+    @Override
     protected void addReplyTo(final Parameter _parameter,
                               final Email _email)
         throws EFapsException, EmailException
