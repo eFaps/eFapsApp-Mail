@@ -21,7 +21,9 @@
 package org.efaps.esjp.mail;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import javax.mail.Session;
@@ -33,7 +35,9 @@ import org.efaps.admin.event.Parameter;
 import org.efaps.admin.program.esjp.EFapsRevision;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.admin.user.Person;
+import org.efaps.ci.CIAdminUser;
 import org.efaps.db.Context;
+import org.efaps.db.PrintQuery;
 import org.efaps.esjp.common.AbstractCommon;
 import org.efaps.esjp.mail.utils.Mail;
 import org.efaps.esjp.mail.utils.MailSettings;
@@ -179,9 +183,42 @@ public abstract class AbstractSendMail_Base
     {
         if (this.parameters.isEmpty()) {
             final Person person = Context.getThreadContext().getPerson();
-            this.parameters.put("user.firstname",  person.getFirstName());
-            this.parameters.put("user.lastname",  person.getLastName());
-            this.parameters.put("user.name",   person.getName());
+            this.parameters.put("user.firstname", person.getFirstName());
+            this.parameters.put("user.lastname", person.getLastName());
+            this.parameters.put("user.name", person.getName());
+            final PrintQuery print = new PrintQuery(CIAdminUser.Person.getType(), Context.getThreadContext().getPersonId());
+            print.addAttribute(CIAdminUser.Person.EmailSet);
+            print.addAttribute("PhoneSet");
+            print.executeWithoutAccessCheck();
+            final Map<String, Object> emailSet = print.getAttributeSet("EmailSet");
+            if (emailSet != null) {
+                @SuppressWarnings("unchecked")
+                final List<Boolean> primaryValues = (List<Boolean>) emailSet.get("Primary");
+                @SuppressWarnings("unchecked")
+                final List<String> emailValues = (List<String>) emailSet.get("Email");
+                int i =0;
+                for (Boolean val : primaryValues) {
+                    if (val) {
+                        this.parameters.put("user.mail", emailValues.get(i));
+                        break;
+                    } else {
+                        i++;
+                    }
+                }
+            }
+            final Map<String, Object> phoneSet = print.getAttributeSet("PhoneSet");
+            if (phoneSet != null) {
+                @SuppressWarnings("unchecked")
+                final List<String> phoneValues = (List<String>) phoneSet.get("Phone");
+                String phone = "";
+                for (String phoneStr : phoneValues) {
+                    if (!phone.isEmpty()) {
+                        phone = phone +  ". ";
+                    }
+                    phone = phone + phoneStr;
+                }
+                this.parameters.put("user.phone",phone);
+            }
         }
         return this.parameters;
     }
