@@ -28,6 +28,7 @@ import java.util.Properties;
 
 import javax.mail.Session;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
@@ -197,7 +198,7 @@ public abstract class AbstractSendMail_Base
                 @SuppressWarnings("unchecked")
                 final List<String> emailValues = (List<String>) emailSet.get("Email");
                 int i =0;
-                for (Boolean val : primaryValues) {
+                for (final Boolean val : primaryValues) {
                     if (val) {
                         this.parameters.put("user.mail", emailValues.get(i));
                         break;
@@ -211,7 +212,7 @@ public abstract class AbstractSendMail_Base
                 @SuppressWarnings("unchecked")
                 final List<String> phoneValues = (List<String>) phoneSet.get("Phone");
                 String phone = "";
-                for (String phoneStr : phoneValues) {
+                for (final String phoneStr : phoneValues) {
                     if (!phone.isEmpty()) {
                         phone = phone +  ". ";
                     }
@@ -237,10 +238,20 @@ public abstract class AbstractSendMail_Base
      * @return new String
      * @throws EFapsException   on error
      */
-    protected String substitute(final String _template)
+    protected String substitute(final String _template,
+                                final boolean _escape4Html)
         throws EFapsException
     {
-        final StrSubstitutor sub = new StrSubstitutor(getParameters());
+        Map<String,String> parameters;
+        if (_escape4Html) {
+            parameters = new HashMap<String,String>();
+            for (final Entry<String,String> entry: getParameters().entrySet()) {
+                parameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue()));
+            }
+        } else {
+            parameters = getParameters();
+        }
+        final StrSubstitutor sub = new StrSubstitutor(parameters);
         return sub.replace(_template);
     }
 }

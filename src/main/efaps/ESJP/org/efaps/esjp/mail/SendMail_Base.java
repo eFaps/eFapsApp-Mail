@@ -37,11 +37,14 @@ import java.util.UUID;
 import javax.activation.DataSource;
 import javax.mail.util.ByteArrayDataSource;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
+import org.efaps.admin.datamodel.Attribute;
 import org.efaps.admin.datamodel.Type;
+import org.efaps.admin.datamodel.ui.FieldValue;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Return;
 import org.efaps.admin.event.Return.ReturnValues;
@@ -49,6 +52,7 @@ import org.efaps.admin.program.esjp.EFapsRevision;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.admin.ui.AbstractUserInterfaceObject.TargetMode;
 import org.efaps.beans.ValueList;
+import org.efaps.beans.ValueList.Token;
 import org.efaps.beans.valueparser.ParseException;
 import org.efaps.beans.valueparser.ValueParser;
 import org.efaps.ci.CIAdminUser;
@@ -126,11 +130,11 @@ public abstract class SendMail_Base
                                     templateKey);
                 } else {
                     if (isHtml) {
-                        sendHtml(_parameter, server, getObjectString(_parameter, instance, subject),
-                                        getObjectString(_parameter, instance, template));
+                        sendHtml(_parameter, server, getObjectString(_parameter, instance, subject, false),
+                                        getObjectString(_parameter, instance, template, true));
                     } else {
-                        sendPlain(_parameter, server, getObjectString(_parameter, instance, subject),
-                                        getObjectString(_parameter, instance, template));
+                        sendPlain(_parameter, server, getObjectString(_parameter, instance, subject, false),
+                                        getObjectString(_parameter, instance, template, false));
                     }
                 }
             }
@@ -152,18 +156,20 @@ public abstract class SendMail_Base
     }
 
     /**
-     * @param _parameter    Parameter as passed by the efasp API
+     * @param _parameter    Parameter as passed by the eFaps API
      * @param _instance     instance the print is based on
-     * @param _template     templat eto parse
+     * @param _template     template to parse
+     * @param _escape4Html  escape the value for html, <b>not the template!<b>
      * @return String
      * @throws EFapsException on error
      */
     protected String getObjectString(final Parameter _parameter,
                                      final Instance _instance,
-                                     final String _string)
+                                     final String _template,
+                                     final boolean _escape4Html)
         throws EFapsException
     {
-        String ret = substitute(_string);
+        String ret = substitute(_template, _escape4Html);
         try {
             final ValueParser parser = new ValueParser(new StringReader(ret));
             final ValueList valList = parser.ExpressionString();
@@ -171,7 +177,33 @@ public abstract class SendMail_Base
                 final PrintQuery print = new PrintQuery(_instance);
                 valList.makeSelect(print);
                 print.executeWithoutAccessCheck();
-                ret = valList.makeString(_instance, print, TargetMode.VIEW);
+                final StringBuilder strBldr = new StringBuilder();
+                for (final Token token : valList.getTokens()) {
+                    switch (token.getType()) {
+                        case EXPRESSION:
+                            final Attribute attr = print.getAttribute4Select(token.getValue());
+                            final Object value = print.getSelect(token.getValue());
+                            String tmp = "";
+                            if (attr != null) {
+                                tmp = new FieldValue(null, attr, value, null, _instance)
+                                                .getStringValue(TargetMode.VIEW);
+                            } else if (value != null) {
+                                tmp = String.valueOf(value);
+                            }
+                            if (_escape4Html) {
+                                strBldr.append(StringEscapeUtils.escapeHtml4(tmp));
+                            } else {
+                                strBldr.append(tmp);
+                            }
+                            break;
+                        case TEXT:
+                            strBldr.append(token.getValue());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                ret = strBldr.toString();
             }
         } catch (final ParseException e) {
             throw new EFapsException("Catched Parser Exception.", e);
@@ -194,6 +226,7 @@ public abstract class SendMail_Base
     {
         try {
             final HtmlEmail email = new HtmlEmail();
+            email.setCharset("UTF-8");
             email.setSubject(_subject);
             email.setHtmlMsg(_htmlContent);
             attach(_parameter, email);
@@ -218,6 +251,7 @@ public abstract class SendMail_Base
     {
         try {
             final SimpleEmail email = new SimpleEmail();
+            email.setCharset("UTF-8");
             email.setSubject(_subject);
             email.setMsg(_plainContent);
             send(_parameter, _server, email);
