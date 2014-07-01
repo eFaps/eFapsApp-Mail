@@ -56,6 +56,7 @@ import org.efaps.beans.ValueList.Token;
 import org.efaps.beans.valueparser.ParseException;
 import org.efaps.beans.valueparser.ValueParser;
 import org.efaps.ci.CIAdminUser;
+import org.efaps.ci.CIType;
 import org.efaps.db.Checkout;
 import org.efaps.db.Context;
 import org.efaps.db.Instance;
@@ -113,7 +114,9 @@ public abstract class SendMail_Base
                 boolean isHtml = true;
                 String server = null;
                 String subject = null;
+                Instance templInst = null;
                 if (print.next()) {
+                    templInst  = print.getCurrentInstance();
                     template = print.<String>getAttribute(CIMail.TemplateObject.Template);
                     subject = print.<String>getAttribute(CIMail.TemplateObject.Subject);
                     server = print.<String>getAttribute(CIMail.TemplateObject.Server);
@@ -130,10 +133,10 @@ public abstract class SendMail_Base
                                     templateKey);
                 } else {
                     if (isHtml) {
-                        sendHtml(_parameter, server, getObjectString(_parameter, instance, subject, false),
+                        sendHtml(_parameter, server, templInst, getObjectString(_parameter, instance, subject, false),
                                         getObjectString(_parameter, instance, template, true));
                     } else {
-                        sendPlain(_parameter, server, getObjectString(_parameter, instance, subject, false),
+                        sendPlain(_parameter, server, templInst, getObjectString(_parameter, instance, subject, false),
                                         getObjectString(_parameter, instance, template, false));
                     }
                 }
@@ -214,12 +217,14 @@ public abstract class SendMail_Base
     /**
      * @param _parameter    Parameter as passed by the efasp API
      * @param _server       Server to be used
+     * @param _templInst    instance of the template
      * @param _subject      Subject for the mail
      * @param _htmlContent  content
      * @throws EFapsException on error
      */
     protected void sendHtml(final Parameter _parameter,
                             final String _server,
+                            final Instance _templInst,
                             final String _subject,
                             final String _htmlContent)
         throws EFapsException
@@ -230,7 +235,7 @@ public abstract class SendMail_Base
             email.setSubject(_subject);
             email.setHtmlMsg(_htmlContent);
             attach(_parameter, email);
-            send(_parameter, _server, email);
+            send(_parameter, _server, email, _templInst);
         } catch (final EmailException e) {
             SendMail_Base.LOG.error("Could not send Mail.", e);
         }
@@ -239,14 +244,16 @@ public abstract class SendMail_Base
     /**
      * @param _parameter    Parameter as passed by the efasp API
      * @param _server       Server to be used
+     * @param _templInst    instance of the template
      * @param _subject      Subject for the mail
      * @param _plainContent  content
      * @throws EFapsException on error
      */
     protected void sendPlain(final Parameter _parameter,
-                            final String _server,
-                            final String _subject,
-                            final String _plainContent)
+                             final String _server,
+                             final Instance _templInst,
+                             final String _subject,
+                             final String _plainContent)
         throws EFapsException
     {
         try {
@@ -254,7 +261,7 @@ public abstract class SendMail_Base
             email.setCharset("UTF-8");
             email.setSubject(_subject);
             email.setMsg(_plainContent);
-            send(_parameter, _server, email);
+            send(_parameter, _server, email, _templInst);
         } catch (final EmailException e) {
             SendMail_Base.LOG.error("Could not send Mail.", e);
         }
@@ -265,7 +272,8 @@ public abstract class SendMail_Base
      */
     @Override
     protected void addTo(final Parameter _parameter,
-                         final Email _email)
+                         final Email _email,
+                         final Object... _objects)
         throws EmailException
     {
         final String[] tos = _parameter.getParameterValues(CITableMail.Mail_SendObjectMailToTable.to.name);
@@ -274,33 +282,77 @@ public abstract class SendMail_Base
             for (int i = 0; i< tos.length; i++) {
                 final String to = tos[i];
                 final String toName = toNames[i];
-                if (toName != null && toName.isEmpty()) {
+                if (toName != null && !toName.isEmpty()) {
                     _email.addTo(to, toName);
                 } else {
                     _email.addTo(to);
                 }
             }
         }
+        if (_objects != null) {
+            for (final Object object : _objects) {
+                if (object instanceof Instance) {
+                    final Collection<String[]> addresses = getAdresses(_parameter, (Instance) object,
+                                    CIMail.AddressTo);
+                    for (final String[] address: addresses) {
+                        _email.addTo(address[0], address[1]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param _parameter Parameter as passed by the eFaps API
+     * @return list of ObjectArrays {address, name}
+     * @throws EmailException on error
+     */
+    protected Collection<String[]> getAdresses(final Parameter _parameter,
+                                               final Instance _templInst,
+                                               final CIType _ciType)
+        throws EmailException
+    {
+        final List<String[]> ret = new ArrayList<>();
+        if (_templInst != null && _templInst.isValid()
+                        && _templInst.getType().isKindOf(CIMail.TemplateAbstract.getType())) {
+            try {
+                final QueryBuilder queryBldr = new QueryBuilder(_ciType);
+                queryBldr.addWhereAttrEqValue(CIMail.AddressAbstract.TemplateLink, _templInst);
+                final MultiPrintQuery multi = queryBldr.getPrint();
+                multi.addAttribute(CIMail.AddressAbstract.Name, CIMail.AddressAbstract.Address);
+                multi.executeWithoutAccessCheck();
+                while (multi.next()) {
+                    ret.add(new String[] { multi.<String>getAttribute(CIMail.AddressAbstract.Address),
+                                    multi.<String>getAttribute(CIMail.AddressAbstract.Name) });
+                }
+            } catch (final EFapsException e) {
+                throw new EmailException();
+            }
+        }
+        return ret;
     }
 
     @Override
     protected void addCc(final Parameter _parameter,
-                         final Email _email)
+                         final Email _email,
+                         final Object... _objects)
         throws EFapsException, EmailException
     {
         super.addCc(_parameter, _email);
-        final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
-        queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
-        final MultiPrintQuery multi = queryBldr.getPrint();
-        multi.addAttributeSet(CIAdminUser.Person.EmailSet.name);
-        multi.executeWithoutAccessCheck();
-        while (multi.next()) {
-            final Map<String, Object> mailSet = multi.getAttributeSet(CIAdminUser.Person.EmailSet.name);
-            if (mailSet != null && mailSet.containsKey("Email")) {
-                @SuppressWarnings("unchecked")
-                final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
-                for (final String email :  emails) {
-                    _email.addCc(email);
+        if ("true".equalsIgnoreCase(getProperty(_parameter, "ContextAddCC", "true"))) {
+            final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
+            queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
+            final MultiPrintQuery multi = queryBldr.getPrint();
+            multi.addAttributeSet(CIAdminUser.Person.EmailSet.name);
+            multi.executeWithoutAccessCheck();
+            while (multi.next()) {
+                final Map<String, Object> mailSet = multi.getAttributeSet(CIAdminUser.Person.EmailSet.name);
+                if (mailSet != null && mailSet.containsKey("Email")) {
+                    @SuppressWarnings("unchecked")
+                    final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
+                    for (final String email :  emails) {
+                        _email.addCc(email);
+                    }
                 }
             }
         }
@@ -308,22 +360,25 @@ public abstract class SendMail_Base
 
     @Override
     protected void addReplyTo(final Parameter _parameter,
-                              final Email _email)
+                              final Email _email,
+                              final Object... _objects)
         throws EFapsException, EmailException
     {
         super.addReplyTo(_parameter, _email);
-        final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
-        queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
-        final MultiPrintQuery multi = queryBldr.getPrint();
-        multi.addAttributeSet(CIAdminUser.Person.EmailSet.name);
-        multi.executeWithoutAccessCheck();
-        while (multi.next()) {
-            final Map<String, Object> mailSet = multi.getAttributeSet(CIAdminUser.Person.EmailSet.name);
-            if (mailSet != null && mailSet.containsKey("Email")) {
-                @SuppressWarnings("unchecked")
-                final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
-                for (final String email :  emails) {
-                    _email.addReplyTo(email);
+        if ("true".equalsIgnoreCase(getProperty(_parameter, "ContextAddReplyTo", "true"))) {
+            final QueryBuilder queryBldr = new QueryBuilder(CIAdminUser.Person);
+            queryBldr.addWhereAttrEqValue(CIAdminUser.Person.ID, Context.getThreadContext().getPersonId());
+            final MultiPrintQuery multi = queryBldr.getPrint();
+            multi.addAttributeSet(CIAdminUser.Person.EmailSet.name);
+            multi.executeWithoutAccessCheck();
+            while (multi.next()) {
+                final Map<String, Object> mailSet = multi.getAttributeSet(CIAdminUser.Person.EmailSet.name);
+                if (mailSet != null && mailSet.containsKey("Email")) {
+                    @SuppressWarnings("unchecked")
+                    final ArrayList<String> emails = (ArrayList<String>) mailSet.get("Email");
+                    for (final String email :  emails) {
+                        _email.addReplyTo(email);
+                    }
                 }
             }
         }

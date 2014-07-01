@@ -71,10 +71,11 @@ public abstract class MailEventDefinition_Base
 
                 @Override
                 protected void addTo(final Parameter _parameter,
-                                     final Email _email)
+                                     final Email _email,
+                                     final Object... _objects)
                     throws EmailException
                 {
-                    MailEventDefinition_Base.this.addTo( _email);
+                    MailEventDefinition_Base.this.addTo(_email);
                 }
             };
 

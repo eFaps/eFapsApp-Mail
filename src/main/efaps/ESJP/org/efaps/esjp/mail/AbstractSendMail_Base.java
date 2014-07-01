@@ -88,19 +88,21 @@ public abstract class AbstractSendMail_Base
      * @param _parameter    Parameter as passed by the eFasp API
      * @param _server       Server to be used
      * @param _email        the email to be send
+     * @param _objects      additional parameters
      * @throws EFapsException   on error
      * @throws EmailException   on email error
      */
     protected void send(final Parameter _parameter,
                         final String _server,
-                        final Email _email)
+                        final Email _email,
+                        final Object... _objects)
         throws EFapsException, EmailException
     {
         setFrom(_parameter, _email);
-        addTo(_parameter, _email);
-        addBcc(_parameter, _email);
-        addCc(_parameter, _email);
-        addReplyTo(_parameter, _email);
+        addTo(_parameter, _email, _objects);
+        addBcc(_parameter, _email, _objects);
+        addCc(_parameter, _email, _objects);
+        addReplyTo(_parameter, _email, _objects);
         _email.setMailSession(getSession(_parameter, _server));
         _email.send();
     }
@@ -108,11 +110,13 @@ public abstract class AbstractSendMail_Base
     /**
      * @param _parameter    Parameter as passed by the eFaps API
      * @param _email        the email to be send
+     * @param _objects      additional parameters
      * @throws EFapsException   on error
      * @throws EmailException   on email error
      */
     protected void setFrom(final Parameter _parameter,
-                           final Email _email)
+                           final Email _email,
+                           final Object... _objects)
         throws EFapsException, EmailException
     {
         // as default: nothing
@@ -127,11 +131,13 @@ public abstract class AbstractSendMail_Base
     /**
      * @param _parameter    Parameter as passed by the eFaps API
      * @param _email        the email to be send
+     * @param _objects      additional parameters
      * @throws EFapsException   on error
      * @throws EmailException   on email error
      */
     protected void addCc(final Parameter _parameter,
-                         final Email _email)
+                         final Email _email,
+                         final Object... _objects)
         throws EFapsException, EmailException
     {
         // as default: nothing
@@ -140,11 +146,13 @@ public abstract class AbstractSendMail_Base
     /**
      * @param _parameter    Parameter as passed by the eFaps API
      * @param _email        the email to be send
+     * @param _objects      additional parameters
      * @throws EFapsException   on error
      * @throws EmailException   on email error
      */
     protected void addBcc(final Parameter _parameter,
-                          final Email _email)
+                          final Email _email,
+                          final Object... _objects)
         throws EFapsException, EmailException
     {
         // as default: nothing
@@ -153,11 +161,13 @@ public abstract class AbstractSendMail_Base
     /**
      * @param _parameter    Parameter as passed by the eFaps API
      * @param _email        the email to be send
+     * @param _objects      additional parameters
      * @throws EFapsException   on error
      * @throws EmailException   on email error
      */
     protected void addReplyTo(final Parameter _parameter,
-                              final Email _email)
+                              final Email _email,
+                              final Object... _objects)
         throws EFapsException, EmailException
     {
         // as default: nothing
@@ -166,11 +176,13 @@ public abstract class AbstractSendMail_Base
     /**
      * @param _parameter    Parameter as passed by the eFasp API
      * @param _email        the email to be send
+     * @param _objects      additional parameters
      * @throws EFapsException   on error
      * @throws EmailException   on email error
      */
     protected abstract void addTo(final Parameter _parameter,
-                                  final Email _email)
+                                  final Email _email,
+                                  final Object... _objects)
         throws EFapsException, EmailException;
 
     /**
