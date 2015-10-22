@@ -65,7 +65,7 @@ public abstract class MailEventDefinition_Base
                 {
                     _queryBldr.addWhereAttrEqValue(CIMail.TemplateAbstract.Company, event.getCompany().getId());
                     final InstanceQuery query = _queryBldr.getQuery();
-                    query.setCompanyDepended(false);
+                    query.setCompanyDependent(false);
                     return new MultiPrintQuery(query.executeWithoutAccessCheck());
                 }
 
