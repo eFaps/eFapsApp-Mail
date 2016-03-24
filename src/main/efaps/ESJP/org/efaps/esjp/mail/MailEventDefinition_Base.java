@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 - 2013 The eFaps Team
+ * Copyright 2003 - 2016 The eFaps Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Revision:        $Rev$
- * Last Changed:    $Date$
- * Last Changed By: $Author$
  */
 
 
@@ -25,7 +22,7 @@ import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Parameter.ParameterValues;
-import org.efaps.admin.program.esjp.EFapsRevision;
+import org.efaps.admin.program.esjp.EFapsApplication;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.db.Instance;
 import org.efaps.db.InstanceQuery;
@@ -37,11 +34,17 @@ import org.efaps.util.EFapsException;
 import org.quartz.JobExecutionContext;
 
 
+/**
+ * The Class MailEventDefinition_Base.
+ *
+ * @author The eFaps Team
+ */
 @EFapsUUID("6b5617f3-8667-4c57-9c59-54fe92c6c270")
-@EFapsRevision("$Rev$")
+@EFapsApplication("eFapsApp-Mail")
 public abstract class MailEventDefinition_Base
     extends AbstractEventDefinition
 {
+
     @Override
     public void execute(final Instance _defInstance,
                         final JobExecutionContext _jobExec)
@@ -86,8 +89,9 @@ public abstract class MailEventDefinition_Base
     }
 
     /**
-     * @param _email
-     * @return
+     * Adds the to.
+     *
+     * @param _email the email
      */
     protected void addTo(final Email _email)
     {
@@ -106,6 +110,11 @@ public abstract class MailEventDefinition_Base
         }
     }
 
+    /**
+     * Gets the template key.
+     *
+     * @return the template key
+     */
     protected String getTemplateKey()
     {
         return getProperties().getProperty("MailTemplate");

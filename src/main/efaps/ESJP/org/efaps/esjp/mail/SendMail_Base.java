@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 - 2013 The eFaps Team
+ * Copyright 2003 - 2016 The eFaps Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Revision:        $Rev$
- * Last Changed:    $Date$
- * Last Changed By: $Author$
  */
 
 
@@ -48,7 +45,7 @@ import org.efaps.admin.datamodel.ui.FieldValue;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Return;
 import org.efaps.admin.event.Return.ReturnValues;
-import org.efaps.admin.program.esjp.EFapsRevision;
+import org.efaps.admin.program.esjp.EFapsApplication;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.admin.ui.AbstractUserInterfaceObject.TargetMode;
 import org.efaps.beans.ValueList;
@@ -77,10 +74,9 @@ import org.slf4j.LoggerFactory;
  * TODO comment!
  *
  * @author The eFaps Team
- * @version $Id$
  */
 @EFapsUUID("90e9fd8d-2396-4719-b691-7404872dc6bb")
-@EFapsRevision("$Rev$")
+@EFapsApplication("eFapsApp-Mail")
 public abstract class SendMail_Base
     extends AbstractSendMail
 {
@@ -90,9 +86,11 @@ public abstract class SendMail_Base
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSendMail.class);
 
     /**
-     * @param _parameter
-     * @return
-     * @throws EFapsException
+     * Send object mail.
+     *
+     * @param _parameter Parameter as passed by the eFaps API
+     * @return the return
+     * @throws EFapsException on error
      */
     public Return sendObjectMail(final Parameter _parameter)
         throws EFapsException
@@ -145,12 +143,27 @@ public abstract class SendMail_Base
         return new Return();
     }
 
+    /**
+     * Gets the template key.
+     *
+     * @param _parameter Parameter as passed by the eFaps API
+     * @return the template key
+     * @throws EFapsException on error
+     */
     protected String getTemplateKey(final Parameter _parameter)
         throws EFapsException
     {
         return getProperty(_parameter, "Template");
     }
 
+    /**
+     * Gets the prints the.
+     *
+     * @param _parameter Parameter as passed by the eFaps API
+     * @param _queryBldr the query bldr
+     * @return the prints the
+     * @throws EFapsException on error
+     */
     protected MultiPrintQuery getPrint(final Parameter _parameter,
                                        final QueryBuilder _queryBldr)
         throws EFapsException
@@ -162,7 +175,7 @@ public abstract class SendMail_Base
      * @param _parameter    Parameter as passed by the eFaps API
      * @param _instance     instance the print is based on
      * @param _template     template to parse
-     * @param _escape4Html  escape the value for html, <b>not the template!<b>
+     * @param _escape4Html  escape the value for html, <b>not the template!</b>
      * @return String
      * @throws EFapsException on error
      */
@@ -279,7 +292,7 @@ public abstract class SendMail_Base
         final String[] tos = _parameter.getParameterValues(CITableMail.Mail_SendObjectMailToTable.to.name);
         final String[] toNames = _parameter.getParameterValues(CITableMail.Mail_SendObjectMailToTable.toName.name);
         if (tos != null) {
-            for (int i = 0; i< tos.length; i++) {
+            for (int i = 0; i < tos.length; i++) {
                 final String to = tos[i];
                 final String toName = toNames[i];
                 if (toName != null && !toName.isEmpty()) {
@@ -303,7 +316,11 @@ public abstract class SendMail_Base
     }
 
     /**
+     * Gets the adresses.
+     *
      * @param _parameter Parameter as passed by the eFaps API
+     * @param _templInst the templ inst
+     * @param _ciType the ci type
      * @return list of ObjectArrays {address, name}
      * @throws EmailException on error
      */
@@ -385,9 +402,12 @@ public abstract class SendMail_Base
     }
 
     /**
+     * Attach.
+     *
      * @param _parameter Parameter as passed by the efasp API
      * @param _email     mail to attach to
-     * @throws EFapsException, EmailException on error
+     * @throws EFapsException on error
+     * @throws EmailException the email exception
      */
     protected void attach(final Parameter _parameter,
                           final HtmlEmail _email)
@@ -408,6 +428,13 @@ public abstract class SendMail_Base
         }
     }
 
+    /**
+     * Gets the java script ui value.
+     *
+     * @param _parameter Parameter as passed by the eFaps API
+     * @return the java script ui value
+     * @throws EFapsException on error
+     */
     @SuppressWarnings("unchecked")
     public Return getJavaScriptUIValue(final Parameter _parameter)
         throws EFapsException
@@ -462,7 +489,9 @@ public abstract class SendMail_Base
         return ret;
     }
 
-
+    /**
+     * The Class MailDoc.
+     */
     public static class MailDoc
         extends CommonDocument
     {

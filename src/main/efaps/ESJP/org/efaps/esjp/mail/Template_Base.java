@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 - 2015 The eFaps Team
+ * Copyright 2003 - 2016 The eFaps Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,13 +39,12 @@ import org.efaps.util.EFapsException;
 public abstract class Template_Base
     extends AbstractCommon
 {
-
     /**
      * Send test mail.
      *
      * @param _parameter the _parameter
      * @return the return
-     * @throws EFapsException
+     * @throws EFapsException on error
      */
     public Return sendTestMail(final Parameter _parameter)
         throws EFapsException

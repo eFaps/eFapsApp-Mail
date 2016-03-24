@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 - 2013 The eFaps Team
+ * Copyright 2003 - 2016 The eFaps Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Revision:        $Rev$
- * Last Changed:    $Date$
- * Last Changed By: $Author$
  */
 
 package org.efaps.esjp.mail;
@@ -33,7 +30,7 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.efaps.admin.event.Parameter;
-import org.efaps.admin.program.esjp.EFapsRevision;
+import org.efaps.admin.program.esjp.EFapsApplication;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.admin.user.Person;
 import org.efaps.ci.CIAdminUser;
@@ -41,7 +38,6 @@ import org.efaps.db.Context;
 import org.efaps.db.PrintQuery;
 import org.efaps.esjp.common.AbstractCommon;
 import org.efaps.esjp.mail.utils.Mail;
-import org.efaps.esjp.mail.utils.MailSettings;
 import org.efaps.util.EFapsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,10 +46,9 @@ import org.slf4j.LoggerFactory;
  * TODO comment!
  *
  * @author The eFaps Team
- * @version $Id$
  */
 @EFapsUUID("4a2ed8b6-3d80-4263-8b81-3fb850577e74")
-@EFapsRevision("$Rev$")
+@EFapsApplication("eFapsApp-Mail")
 public abstract class AbstractSendMail_Base
     extends AbstractCommon
 {
@@ -66,7 +61,7 @@ public abstract class AbstractSendMail_Base
     /**
      * Map for parameters used with a substitutor.
      */
-    private final Map<String,String> parameters = new HashMap<String,String>();
+    private final Map<String, String> parameters = new HashMap<String, String>();
 
     /**
      * @param _parameter parameter as passed by the eFaps API
@@ -78,7 +73,13 @@ public abstract class AbstractSendMail_Base
                                  final String _server)
         throws EFapsException
     {
-        final Properties props = Mail.getSysConfig().getAttributeValueAsProperties(MailSettings.SERVER + _server);
+        final Properties serverprops = Mail.SERVERS.get();
+        final Properties props = new Properties();
+        for (final String propName : serverprops.stringPropertyNames()) {
+            if (propName.startsWith(_server + ".")) {
+                props.setProperty(propName.substring(_server.length() + 1), serverprops.getProperty(propName));
+            }
+        }
         AbstractSendMail_Base.LOG.debug("Getting Session with Properties: {}", props);
         return Session.getInstance(props);
     }
@@ -120,8 +121,8 @@ public abstract class AbstractSendMail_Base
         throws EFapsException, EmailException
     {
         // as default: nothing
-        if (_email.getFromAddress() == null ) {
-            final String mail = Mail.getSysConfig().getAttributeValue(MailSettings.DEFAULTFROM);
+        if (_email.getFromAddress() == null) {
+            final String mail = Mail.DEFAULTFROM.get();
             if (mail !=  null) {
                 _email.setFrom(mail);
             }
@@ -199,7 +200,8 @@ public abstract class AbstractSendMail_Base
             this.parameters.put("user.firstname", person.getFirstName());
             this.parameters.put("user.lastname", person.getLastName());
             this.parameters.put("user.name", person.getName());
-            final PrintQuery print = new PrintQuery(CIAdminUser.Person.getType(), Context.getThreadContext().getPersonId());
+            final PrintQuery print = new PrintQuery(CIAdminUser.Person.getType(), Context.getThreadContext()
+                            .getPersonId());
             print.addAttribute(CIAdminUser.Person.EmailSet);
             print.addAttribute("PhoneSet");
             print.executeWithoutAccessCheck();
@@ -209,7 +211,7 @@ public abstract class AbstractSendMail_Base
                 final List<Boolean> primaryValues = (List<Boolean>) emailSet.get("Primary");
                 @SuppressWarnings("unchecked")
                 final List<String> emailValues = (List<String>) emailSet.get("Email");
-                int i =0;
+                int i = 0;
                 for (final Boolean val : primaryValues) {
                     if (val) {
                         this.parameters.put("user.mail", emailValues.get(i));
@@ -226,11 +228,11 @@ public abstract class AbstractSendMail_Base
                 String phone = "";
                 for (final String phoneStr : phoneValues) {
                     if (!phone.isEmpty()) {
-                        phone = phone +  ". ";
+                        phone = phone + ". ";
                     }
                     phone = phone + phoneStr;
                 }
-                this.parameters.put("user.phone",phone);
+                this.parameters.put("user.phone", phone);
             }
         }
         return this.parameters;
@@ -238,15 +240,16 @@ public abstract class AbstractSendMail_Base
 
     /**
      * Example:<br>
-     *<br>
+     * <br>
      * getParameters().put("animal", "quick brown fox");<br>
      * getParameters().put("target", "lazy dog");<br>
      * String templateString = "The ${animal} jumped over the ${target}.";<br>
-     *<br>
+     * <br>
      * yielding:<br>
      * The quick brown fox jumped over the lazy dog.<br>
      *
      * @param _template Template to be substituted
+     * @param _escape4Html the escape4 html
      * @return new String
      * @throws EFapsException   on error
      */
@@ -254,16 +257,16 @@ public abstract class AbstractSendMail_Base
                                 final boolean _escape4Html)
         throws EFapsException
     {
-        Map<String,String> parameters;
+        final Map<String, String> tmpParameters;
         if (_escape4Html) {
-            parameters = new HashMap<String,String>();
-            for (final Entry<String,String> entry: getParameters().entrySet()) {
-                parameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue()));
+            tmpParameters = new HashMap<String, String>();
+            for (final Entry<String, String> entry : getParameters().entrySet()) {
+                tmpParameters.put(entry.getKey(), StringEscapeUtils.escapeHtml4(entry.getValue()));
             }
         } else {
-            parameters = getParameters();
+            tmpParameters = getParameters();
         }
-        final StrSubstitutor sub = new StrSubstitutor(parameters);
+        final StrSubstitutor sub = new StrSubstitutor(tmpParameters);
         return sub.replace(_template);
     }
 }
