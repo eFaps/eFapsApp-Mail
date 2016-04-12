@@ -33,12 +33,12 @@
             <property name="ModeCreate">EDITABLE</property>
             <property name="ModeEdit">EDITABLE</property>
             <property name="Label">Mail_SendObjectMailToTable.toName.Label</property>
-            <property name="ClassNameUI">org.efaps.admin.datamodel.ui.StringUI</property>
+            <property name="UIProvider">org.efaps.admin.datamodel.ui.StringUI</property>
         </field>
         <field name="to">
             <property name="ModeCreate">EDITABLE</property>
             <property name="ModeEdit">EDITABLE</property>
-            <property name="ClassNameUI">org.efaps.admin.datamodel.ui.StringUI</property>
+            <property name="UIProvider">org.efaps.admin.datamodel.ui.StringUI</property>
             <property name="Label">Mail_SendObjectMailToTable.to.Label</property>
             <property name="Required">true</property>
         </field>
