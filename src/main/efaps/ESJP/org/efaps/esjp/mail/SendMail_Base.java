@@ -39,9 +39,7 @@ import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
-import org.efaps.admin.datamodel.Attribute;
 import org.efaps.admin.datamodel.Type;
-import org.efaps.admin.datamodel.ui.FieldValue;
 import org.efaps.admin.event.Parameter;
 import org.efaps.admin.event.Return;
 import org.efaps.admin.event.Return.ReturnValues;
@@ -49,7 +47,6 @@ import org.efaps.admin.program.esjp.EFapsApplication;
 import org.efaps.admin.program.esjp.EFapsUUID;
 import org.efaps.admin.ui.AbstractUserInterfaceObject.TargetMode;
 import org.efaps.beans.ValueList;
-import org.efaps.beans.ValueList.Token;
 import org.efaps.beans.valueparser.ParseException;
 import org.efaps.beans.valueparser.ValueParser;
 import org.efaps.ci.CIAdminUser;
@@ -121,11 +118,11 @@ public abstract class SendMail_Base
                     isHtml  = print.<Boolean>getAttribute(CIMail.TemplateObject.IsHtml);
                 }
 
-                if (template == null || (template != null && template.isEmpty())) {
+                if (template == null || template != null && template.isEmpty()) {
                     SendMail_Base.LOG.error(
                                     "No valid Template for template '{}' during Sending Object Mail found.",
                                     templateKey);
-                } else if (server == null || (server != null && server.isEmpty())) {
+                } else if (server == null || server != null && server.isEmpty()) {
                     SendMail_Base.LOG.error(
                                     "No valid Server for template '{}' during Sending Object Mail found.",
                                     templateKey);
@@ -193,33 +190,12 @@ public abstract class SendMail_Base
                 final PrintQuery print = new PrintQuery(_instance);
                 valList.makeSelect(print);
                 print.executeWithoutAccessCheck();
-                final StringBuilder strBldr = new StringBuilder();
-                for (final Token token : valList.getTokens()) {
-                    switch (token.getType()) {
-                        case EXPRESSION:
-                            final Attribute attr = print.getAttribute4Select(token.getValue());
-                            final Object value = print.getSelect(token.getValue());
-                            String tmp = "";
-                            if (attr != null) {
-                                tmp = new FieldValue(null, attr, value, null, _instance)
-                                                .getStringValue(TargetMode.VIEW);
-                            } else if (value != null) {
-                                tmp = String.valueOf(value);
-                            }
-                            if (_escape4Html) {
-                                strBldr.append(StringEscapeUtils.escapeHtml4(tmp));
-                            } else {
-                                strBldr.append(tmp);
-                            }
-                            break;
-                        case TEXT:
-                            strBldr.append(token.getValue());
-                            break;
-                        default:
-                            break;
-                    }
+                final String tmpStr = valList.makeString(_instance, print, TargetMode.VIEW);
+                if (_escape4Html) {
+                    ret = StringEscapeUtils.escapeHtml4(tmpStr);
+                } else {
+                    ret = tmpStr;
                 }
-                ret = strBldr.toString();
             }
         } catch (final ParseException e) {
             throw new EFapsException("Catched Parser Exception.", e);
